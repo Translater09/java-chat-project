@@ -30,12 +30,16 @@ public class ClientHandler extends Thread {
             username = in.readLine();
 
             isReady = true;
+
             List<ClientHandler> users = Server.channels.get(channel);
-            for (ClientHandler client : users) {
-                if (client != this && client.isReady) {
-                    out.println("[SYSTEM][" + channel + "] " + client.username + " already in channel");
+            if (users != null) {
+                for (ClientHandler client : users) {
+                    if (client != this && client.isReady) {
+                        out.println("[SYSTEM][" + channel + "] " + client.username + " already in channel");
+                    }
                 }
             }
+
             System.out.println("[INFO] " + username + " connected (channel " + channel + ")");
 
             sendToOthers("[SYSTEM][" + channel + "] " + username + " joined");
@@ -44,9 +48,59 @@ public class ClientHandler extends Thread {
 
             while ((message = in.readLine()) != null) {
 
+                // 🔥 /list KOMUTU
+                if (message.equals("/list")) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("[SYSTEM] Channels:\n");
+
+                    for (int i = 1; i <= 100; i++) {
+                        int count = 0;
+
+                        if (Server.channels.containsKey(i)) {
+                            count = Server.channels.get(i).size();
+                        }
+
+                        sb.append("Channel ").append(i)
+                                .append(" (").append(count).append(" users)");
+
+                        if (count == 0) {
+                            sb.append(" [empty]");
+                        }
+
+                        sb.append("\n");
+                    }
+
+                    out.println(sb.toString());
+                    continue;
+                }
+
+                // 🔥 /users KOMUTU
+                if (message.equals("/users")) {
+                    List<ClientHandler> currentUsers = Server.channels.get(channel);
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("[SYSTEM] Users in channel ").append(channel).append(":\n");
+
+                    if (currentUsers != null) {
+                        for (ClientHandler client : currentUsers) {
+                            if (client.isReady) {
+                                sb.append("- ").append(client.username).append("\n");
+                            }
+                        }
+                    }
+
+                    out.println(sb.toString());
+                    continue;
+                }
+
+                // 🔥 /join
                 if (message.startsWith("/join")) {
 
                     int newChannel = Integer.parseInt(message.split(" ")[1]);
+                    if (newChannel < 1 || newChannel > 100) {
+                        out.println("[SYSTEM] Channel must be between 1 and 100");
+                        continue;
+                    }
                     int oldChannel = channel;
 
                     System.out.println("[INFO] " + username +
@@ -68,6 +122,7 @@ public class ClientHandler extends Thread {
                     continue;
                 }
 
+                // normal mesaj
                 sendToChannel("[" + channel + "][" + username + "]: " + message);
             }
 
