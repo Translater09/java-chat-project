@@ -42,13 +42,14 @@ public class ClientHandler extends Thread {
 
             System.out.println("[INFO] " + username + " connected (channel " + channel + ")");
 
+            // Sadece mevcut kanaldaki DİĞERLERİNE haber ver [cite: 5, 8]
             sendToOthers("[SYSTEM][" + channel + "] " + username + " joined");
 
             String message;
 
             while ((message = in.readLine()) != null) {
 
-                // 🔥 /list KOMUTU
+                // 🔥 /list KOMUTU [cite: 11, 12]
                 if (message.equals("/list")) {
                     StringBuilder sb = new StringBuilder();
                     sb.append("[SYSTEM] Channels:\n");
@@ -74,7 +75,7 @@ public class ClientHandler extends Thread {
                     continue;
                 }
 
-                // 🔥 /users KOMUTU
+                // 🔥 /users KOMUTU [cite: 24]
                 if (message.equals("/users")) {
                     List<ClientHandler> currentUsers = Server.channels.get(channel);
 
@@ -93,36 +94,43 @@ public class ClientHandler extends Thread {
                     continue;
                 }
 
-                // 🔥 /join
+                // 🔥 /join (HATA DÜZELTMESİ BURADA) [cite: 6, 21, 23]
                 if (message.startsWith("/join")) {
+                    try {
+                        int newChannel = Integer.parseInt(message.split(" ")[1]);
+                        
+                        // Zaten o kanaldaysa veya geçersizse işlem yapma 
+                        if (newChannel < 1 || newChannel > 100 || newChannel == channel) {
+                            continue;
+                        }
 
-                    int newChannel = Integer.parseInt(message.split(" ")[1]);
-                    if (newChannel < 1 || newChannel > 100) {
-                        out.println("[SYSTEM] Channel must be between 1 and 100");
-                        continue;
+                        int oldChannel = channel;
+
+                        // 1. ESKİ KANALA BİLDİR: Sadece ordakiler duysun
+                        sendToOthers("[SYSTEM][" + oldChannel + "] " + username + " left");
+
+                        if (Server.channels.get(oldChannel) != null) {
+                            Server.channels.get(oldChannel).remove(this);
+                        }
+
+                        channel = newChannel;
+                        Server.channels.putIfAbsent(channel, new java.util.ArrayList<>());
+                        Server.channels.get(channel).add(this);
+
+                        System.out.println("[INFO] " + username + " switching from " + oldChannel + " to " + newChannel);
+
+                        // 2. YENİ KANALA BİLDİR: Sadece yenidekiler duysun
+                        sendToOthers("[SYSTEM][" + channel + "] " + username + " joined");
+
+                        // 3. KULLANICIYA BİLGİ VER
+                        out.println("[SYSTEM] Switched to channel " + channel);
+                    } catch (Exception e) {
+                        out.println("[SYSTEM] Invalid channel format");
                     }
-                    int oldChannel = channel;
-
-                    System.out.println("[INFO] " + username +
-                            " switching from " + oldChannel + " to " + newChannel);
-
-                    if (Server.channels.get(channel) != null) {
-                        Server.channels.get(channel).remove(this);
-                    }
-
-                    channel = newChannel;
-
-                    Server.channels.putIfAbsent(channel, new java.util.ArrayList<>());
-                    Server.channels.get(channel).add(this);
-
-                    sendToOthers("[SYSTEM][" + oldChannel + "] " + username + " left");
-                    sendToOthers("[SYSTEM][" + channel + "] " + username + " joined");
-
-                    out.println("[SYSTEM] Switched to channel " + channel);
                     continue;
                 }
 
-                // normal mesaj
+                // normal mesaj [cite: 22]
                 sendToChannel("[" + channel + "][" + username + "]: " + message);
             }
 
@@ -151,6 +159,7 @@ public class ClientHandler extends Thread {
         if (users == null) return;
 
         for (ClientHandler client : users) {
+            // SADECE AYNI KANALDAKİ DİĞERLERİNE GİDER 
             if (client != this && client.isReady) {
                 client.out.println(message);
             }
