@@ -6,7 +6,7 @@ Bu proje, Java programlama dili kullanılarak geliştirilmiş, TCP/IP soket prot
 👥 Geliştirici Ekibi
 Berkay Avcıoğlu - 230201025
 
-Batuhan Hasoğlu - 220204009
+Batuhan Hasanoğlu - 220204009
 
 Berkay Çevirici - 220204054
 
